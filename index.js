@@ -1,16 +1,17 @@
 const express = require('express')
 const { MongoClient } = require('mongodb')
+const ObjectId = require('mongodb').ObjectId
 const cors = require('cors')
 const app = express()
 const port = 5000
-// middleware
+// middle ware
 app.use(cors())
 app.use(express.json())
-// Travelling-for-5th-semester
-// 5sKtWuV26DLJDsvV
+// Traveling-app-fifth
+// mJpFypko0n6xvgzy
 
 const uri =
-  'mongodb+srv://Travelling-for-5th-semester:5sKtWuV26DLJDsvV@cluster0.9s2cu.mongodb.net/?retryWrites=true&w=majority'
+  'mongodb+srv://Traveling-app-fifth:mJpFypko0n6xvgzy@cluster0.9s2cu.mongodb.net/?retryWrites=true&w=majority'
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -19,10 +20,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect()
-    const database = client.db('5th-Travelling')
+    const database = client.db('Traveling-for-fifth')
     const serviceCollection = database.collection('services')
     console.log('database connected')
-
     // send services to the database
     app.post('/services', async (req, res) => {
       const service = req.body
@@ -30,15 +30,62 @@ async function run() {
       console.log(result)
       res.json(result)
     })
+
+    // update data into products collection
+    app.put('/services/:id([0-9a-fA-F]{24})', async (req, res) => {
+      const id = req.params.id.trim()
+      console.log('updating', id)
+      const updatedService = req.body
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
+          name: updatedService.name,
+          price: updatedService.price,
+          duration: updatedService.duration,
+          img: updatedService.img,
+        },
+      }
+      const result = await serviceCollection.updateOne(
+        filter,
+        updateDoc,
+        options,
+      )
+      console.log('updating', id)
+      res.json(result)
+    })
+
+    // get all services
+    app.get('/services', async (req, res) => {
+      const cursor = serviceCollection.find({})
+      const service = await cursor.toArray()
+      res.send(service)
+    })
+
+    // get a single service from service collection
+    app.get('/services/:id([0-9a-fA-F]{24})', async (req, res) => {
+      const id = req.params.id.trim()
+      const query = { _id: ObjectId(id) }
+      const service = await serviceCollection.findOne(query)
+      res.json(service)
+    })
+
+    // delete a data from service collection
+    app.delete('/services/:id([0-9a-fA-F]{24})', async (req, res) => {
+      const id = req.params.id.trim()
+      const query = { _id: new ObjectId(id) }
+      const result = await serviceCollection.deleteOne(query)
+      res.json('result')
+    })
   } finally {
   }
 }
 run().catch(console.dir)
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send('Running Traveling app')
 })
 
 app.listen(port, () => {
-  console.log(`Traveling is run on port ${port}`)
+  console.log(`Traveling  on port ${port}`)
 })
